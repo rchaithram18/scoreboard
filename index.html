@@ -241,6 +241,8 @@ tfoot td{border-bottom:0;color:var(--muted);font-size:14px}
 <div id="toast" role="alert"></div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 <script>
 (function(){
 "use strict";
@@ -462,13 +464,11 @@ $("endYes").addEventListener("click",function(){
 function start(){
   $("fDate").value=today();render();
   var timer=setTimeout(function(){setStatus("bad","Can't reach the scores yet");},10000);
-  var use=window.claude&&window.claude.use?window.claude.use.bind(window.claude):null;
-  if(!use){clearTimeout(timer);offline();return}
-  Promise.all([use("db"),use("user")]).then(function(a){
-    var db=a[0],user=a[1];
-    if(!db){clearTimeout(timer);offline();return}
+  if(!window.firebase){clearTimeout(timer);offline();return}
+  Promise.resolve().then(function(){
+    firebase.initializeApp({apiKey:"AIzaSyB3mD673DBGPYw99SZXfM4j_KXsBQYo5Bs",authDomain:"zazu-roro-scoreboard.firebaseapp.com",projectId:"zazu-roro-scoreboard",storageBucket:"zazu-roro-scoreboard.firebasestorage.app",messagingSenderId:"751312041750",appId:"1:751312041750:web:47bf88f21b543786c9c237"});
+    var db=firebase.firestore();
     S.db=db;
-    if(user&&user.can){Promise.resolve(user.can("data.write")).then(function(ok){if(ok===false){S.canWrite=false;showReadOnly();render()}}).catch(function(){})}
     function ok(snap){if(!snap.metadata||!snap.metadata.fromCache){clearTimeout(timer);setStatus("live","Live · synced")}}
     function bad(){clearTimeout(timer);setStatus("bad","Lost connection to the scores. Reopen the page to reconnect.")}
     db.collection("games").onSnapshot(function(snap){
@@ -479,7 +479,7 @@ function start(){
       S.sLoaded=true;ok(snap);render()},bad);
   }).catch(function(){clearTimeout(timer);offline()});
 }
-function offline(){S.gLoaded=true;setStatus("bad","Scores unavailable");var n=$("roNote");n.hidden=false;n.textContent="The scores can't load in this view. Open the scoreboard from its Claude link while signed in.";render()}
+function offline(){S.gLoaded=true;setStatus("bad","Scores unavailable");var n=$("roNote");n.hidden=false;n.textContent="The scores can't load right now. Check your internet connection and refresh the page.";render()}
 start();
 })();
 </script>
